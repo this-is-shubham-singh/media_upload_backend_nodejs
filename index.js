@@ -7,7 +7,12 @@ const PORT = process.env.PORT || 4000;
 // middlewares
 app.use(express.json());
 const fileUpload = require("express-fileupload");
-app.use(fileUpload());
+app.use(
+  fileUpload({
+    useTempFiles: true,
+    tempFileDir: "/tmp/",
+  })
+);
 
 // mounting the routes
 const fileUploadRoutes = require("./routes/fileUploadRoutes");
@@ -17,11 +22,10 @@ app.use("/api/v1/upload", fileUploadRoutes);
 const dbConnection = require("./config/database");
 dbConnection();
 
+// cloudinary connection
+const cloudinaryConnect = require("./config/cloudinary");
+cloudinaryConnect();
+
 app.listen(PORT, () => {
   console.log("listening at port " + PORT);
 });
-
-
-// to use cloudinary 
-// 1. schema defination (module)
-// 2. db setup 
