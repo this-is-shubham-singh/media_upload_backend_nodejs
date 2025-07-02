@@ -1,9 +1,13 @@
 const cloudinary = require("cloudinary").v2;
 const File = require("../model/File");
 
-const uploadToCloudinary = async (tempname, folderName) => {
+const uploadToCloudinary = async (tempname, folderName, isQuality) => {
   try {
-    const options = { folder: folderName, resource_type: "auto" };
+    const options = {
+      folder: folderName,
+      resource_type: "auto",
+      quality: isQuality ? isQuality : "",
+    };
     const response = await cloudinary.uploader.upload(tempname, options);
     return response;
   } catch (e) {
@@ -11,6 +15,7 @@ const uploadToCloudinary = async (tempname, folderName) => {
   }
 };
 
+// uploading media on local
 const fileUploadLocal = async (req, res) => {
   try {
     const file = req.files.file;
@@ -40,21 +45,21 @@ const fileUploadLocal = async (req, res) => {
 
 const imageUpload = async (req, res) => {
   try {
-    // fetch all details
+    // ********* 1. fetch all details
     const { name, email, tag } = req.body;
     const file = req.files.mediaFile;
 
-    // validate all details
+    // ********* 2. validate all details
     const allowedExtensions = ["jpg", "png", "jpeg"];
     const fileExtension = file.name.split(".").pop().toLowerCase();
-    if (!allowedExtensions.includes(fileExtension) || file.size > 1048576) {
+    if (!allowedExtensions.includes(fileExtension) || file.size > 2097152) {
       return res.status(415).json({
         success: false,
-        message: "unsupported file type (use jpg, png, jpeg and size < 1mb",
+        message: "unsupported file type (use jpg, png, jpeg and size < 2mb",
       });
     }
 
-    // push changes to cloudinary
+    // ********* 3. push changes to cloudinary
     const response = await uploadToCloudinary(file.tempFilePath, "practise");
     console.log(response);
 
@@ -108,7 +113,44 @@ const videoUpload = async (req, res) => {
   }
 };
 
-const imageSizeReducer = async (req, res) => {};
+const imageSizeReducer = async (req, res) => {
+  try {
+    // fetch all details
+    const { name, email, tag } = req.body;
+    const file = req.files.mediaFile;
+
+    // validate all details
+    const allowedExtensions = ["jpg", "png", "jpeg"];
+    const fileExtension = file.name.split(".").pop().toLowerCase();
+    if (!allowedExtensions.includes(fileExtension) || file.size > 2097152) {
+      return res.status(415).json({
+        success: false,
+        message: "unsupported file type (use mp4, mov, mkv and size < 2mb",
+      });
+    }
+
+    // push changes to cloudinary
+    const response = await uploadToCloudinary(
+      file.tempFilePath,
+      "practise",
+      5
+    );
+    console.log(response);
+
+    const fileData = File({ name, email, tag, imageUrl: response.secure_url });
+    fileData.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "media uploded",
+    });
+  } catch (e) {
+    return res.status(400).json({
+      success: false,
+      message: e.message,
+    });
+  }
+};
 
 module.exports = {
   fileUploadLocal,
