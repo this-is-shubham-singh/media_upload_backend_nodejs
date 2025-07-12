@@ -63,6 +63,8 @@ const imageUpload = async (req, res) => {
     const response = await uploadToCloudinary(file.tempFilePath, "practise");
     console.log(response);
 
+
+    // *********** 4. saving uploaded media with data in db 
     const fileData = File({ name, email, tag, imageUrl: response.secure_url });
     fileData.save();
 
